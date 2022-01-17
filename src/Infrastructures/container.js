@@ -2,6 +2,8 @@
 
 const { createContainer } = require('instances-container');
 
+const date = Date;
+
 // external agency
 const { nanoid } = require('nanoid');
 const bcrypt = require('bcrypt');
@@ -10,19 +12,24 @@ const pool = require('./database/postgres/pool');
 
 // service (repository, helper, manager, etc)
 const UserRepository = require('../Domains/users/UserRepository');
-const PasswordHash = require('../Applications/security/PasswordHash');
 const UserRepositoryPostgres = require('./repository/UserRepositoryPostgres');
+const PasswordHash = require('../Applications/security/PasswordHash');
 const BcryptPasswordHash = require('./security/BcryptPasswordHash');
+const AuthenticationTokenManager = require('../Applications/security/AuthenticationTokenManager');
+const JwtTokenManager = require('./security/JwtTokenManager');
+const AuthenticationRepository = require('../Domains/authentications/AuthenticationRepository');
+const AuthenticationRepositoryPostgres = require('./repository/AuthenticationRepositoryPostgres');
+const NoteRepository = require('../Domains/notes/NoteRepository');
+const NoteRepositoryPostgres = require('./repository/NoteRepositoryPostgres');
 
 // use case
 const AddUserUseCase = require('../Applications/use_case/AddUserUseCase');
-const AuthenticationTokenManager = require('../Applications/security/AuthenticationTokenManager');
-const JwtTokenManager = require('./security/JwtTokenManager');
 const LoginUserUseCase = require('../Applications/use_case/LoginUserUseCase');
-const AuthenticationRepository = require('../Domains/authentications/AuthenticationRepository');
-const AuthenticationRepositoryPostgres = require('./repository/AuthenticationRepositoryPostgres');
 const LogoutUserUseCase = require('../Applications/use_case/LogoutUserUseCase');
 const RefreshAuthenticationUseCase = require('../Applications/use_case/RefreshAuthenticationUseCase');
+const AddNoteUseCase = require('../Applications/use_case/AddNoteUseCase');
+const GetNotesUseCase = require('../Applications/use_case/GetNotesUseCase');
+const GetNoteByIdUseCase = require('../Applications/use_case/GetNoteByIdUseCase');
 
 // creating container
 const container = createContainer();
@@ -72,6 +79,23 @@ container.register([
       dependencies: [
         {
           concrete: Jwt.token,
+        },
+      ],
+    },
+  },
+  {
+    key: NoteRepository.name,
+    Class: NoteRepositoryPostgres,
+    parameter: {
+      dependencies: [
+        {
+          concrete: pool,
+        },
+        {
+          concrete: nanoid,
+        },
+        {
+          concrete: date,
         },
       ],
     },
@@ -148,6 +172,49 @@ container.register([
         {
           name: 'authenticationTokenManager',
           internal: AuthenticationTokenManager.name,
+        },
+      ],
+    },
+  },
+  {
+    key: AddNoteUseCase.name,
+    Class: AddNoteUseCase,
+    parameter: {
+      injectType: 'destructuring',
+      dependencies: [
+        {
+          name: 'noteRepository',
+          internal: NoteRepository.name,
+        },
+        {
+          name: 'authenticationTokenManager',
+          internal: AuthenticationTokenManager.name,
+        },
+      ],
+    },
+  },
+  {
+    key: GetNoteByIdUseCase.name,
+    Class: GetNoteByIdUseCase,
+    parameter: {
+      injectType: 'destructuring',
+      dependencies: [
+        {
+          name: 'noteRepository',
+          internal: NoteRepository.name,
+        },
+      ],
+    },
+  },
+  {
+    key: GetNotesUseCase.name,
+    Class: GetNotesUseCase,
+    parameter: {
+      injectType: 'destructuring',
+      dependencies: [
+        {
+          name: 'noteRepository',
+          internal: NoteRepository.name,
         },
       ],
     },
